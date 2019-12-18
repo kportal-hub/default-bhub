@@ -1,0 +1,14 @@
+name: Notify Kidocode
+on:
+  pull_request:
+    types: ['opened', 'edited', 'reopened', 'synchronize']
+
+jobs:
+  test:
+    name: pr
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: notify
+        run: |
+          echo "hi"
