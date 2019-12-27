@@ -1,4 +1,4 @@
-name: Create Course cube anf fork for teacher
+name: Create Course cube and fork for teacher
 on:
   push:
     paths:    
