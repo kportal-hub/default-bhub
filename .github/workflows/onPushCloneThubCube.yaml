@@ -25,7 +25,7 @@ jobs:
       run: npm install
       env:
         CI: true          
-    - name: Create new course repo anf fork it for teacher
+    - name: Create new course repo and fork it for teacher
       env:
         NODE_CUBE: ${{ github.event_path }}
       run: |
