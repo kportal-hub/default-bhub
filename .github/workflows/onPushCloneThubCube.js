@@ -52,7 +52,7 @@ async function cloneTrainerBuiltCube(bHub, repo_name) {
     }
 }
 
-async function createLessons(lessons, repo_name, token, bHub) {
+async function createLessons(cube, lessons, repo_name, token, bHub) {
     console.log(`Creating '${repo_name}' lessons...`);
     const _silent = false;
 
@@ -72,7 +72,7 @@ async function createLessons(lessons, repo_name, token, bHub) {
 
         cubeInfo = {};
         cubeInfo.index = lessons;
-        fs.writeFileSync(`cube.json`, JSON.stringify(cubeInfo));
+        fs.writeFileSync(`${cube}.cube.json`, JSON.stringify(cubeInfo));
         
         shell.exec(`git add --all`, { silent: _silent });
         shell.exec(`git commit -m 'Add lessons'`, { silent: _silent });
@@ -226,7 +226,7 @@ let initCube = async (username, cube, lessons, repo, gitToken) => {
             let res = await cloneTrainerBuiltCube(bHub, repo_name);
             if (res.result) {
                 // ========================================== func 2 - create a branch for each lesson
-                await createLessons(lessons, repo_name, masterToken, bHub);
+                await createLessons(cube, lessons, repo_name, masterToken, bHub);
                 
                 // ========================================== func 3 - delete auth file
                 await deleteFile(
