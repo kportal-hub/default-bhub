@@ -74,7 +74,7 @@ async function createLessons(cube, lessons, repo_name, token, bHub) {
 
         cubeInfo = {};
         cubeInfo.index = lessons;
-        fs.writeFileSync(`${cube}.cube.json`, JSON.stringify(cubeInfo), null, 4);
+        fs.writeFileSync(`${cube}.cube.json`, JSON.stringify(cubeInfo, null, 4));
         
         shell.exec(`git add --all`, { silent: _silent });
         shell.exec(`git commit -m 'Add lessons'`, { silent: _silent });
