@@ -32,10 +32,11 @@ async function decrypt(content, algorithm, key) {
         const decipher = createDecipheriv(algorithm, key, IV);
         let decrypted = decipher.update(encryptedText, outputEncoding, inputEncoding);
         decrypted += decipher.final(inputEncoding);
-        return {
-            result: true,
-            decrypted: decrypted.toString()
-        }
+        return decrypted.toString()
+        // return {
+        //     result: true,
+        //     decrypted: decrypted.toString()
+        // }
     } catch (err) {
         console.log(err)
         throw err
