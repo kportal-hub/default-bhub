@@ -280,10 +280,20 @@ let initCube = async (username, cube, lessons, repo, gitToken) => {
                     masterToken
                 );
 
-                // ========================================== func 4 - fork cube repo for teacher
+                // ========================================== func 4 - delete cube.user.json
+                await deleteFile(
+                    bHub, // owner
+                    repo_name, // repo
+                    `${cube}.user.json`, // path
+                    `Delete ${cube}.user.json`,
+                    "master", // branch
+                    masterToken
+                );
+
+                // ========================================== func 5 - fork cube repo for teacher
                 await forkBhubCube(username, repo_name, bHub);
 
-                // ========================================== func 5- enable page
+                // ========================================== func 6 - enable page
                 let resp = await enablePage(username, repo_name);
 
                 return resp;
