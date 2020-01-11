@@ -29,6 +29,6 @@ jobs:
       env:
         NODE_CUBE: ${{ github.event_path }}
       run: |
-        git config --global user.email "unclecode@kplat.team"
-        git config --global user.name "kportal-hub"
+        git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+        git config --global user.name "${{ github.actor }}"
         node .github/workflows/onPushCloneThubCube.js ${{ github.repository }} ${{ secrets.GITHUB_TOKEN }}

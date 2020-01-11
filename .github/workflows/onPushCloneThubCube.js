@@ -77,10 +77,10 @@ async function getUserTokenAndDecrypt(repo, algorithm, pwd) {
 }
 
 
-async function cloneTrainerBuiltCube(bHub, repo_name) {
+async function cloneTrainerBuiltCube(bHub, repoName) {
     console.log(`Cloning from BHub...`);
     try {
-        const cloneUrl = `https://github.com/${bHub}/${repo_name}`;
+        const cloneUrl = `https://github.com/${bHub}/${repoName}`;
         const _silent = false;
         shell.exec(`git clone ${cloneUrl}`, { silent: _silent });
         return {
@@ -94,12 +94,12 @@ async function cloneTrainerBuiltCube(bHub, repo_name) {
     }
 }
 
-async function createLessons(cube, lessons, repo_name, token, bHub) {
-    console.log(`Creating '${repo_name}' lessons...`);
+async function createLessons(cube, lessons, repoName, token, bHub) {
+    console.log(`Creating '${repoName}' lessons...`);
     const _silent = false;
 
     try {
-        process.chdir(process.cwd() +  `/${repo_name}`);
+        process.chdir(process.cwd() +  `/${repoName}`);
 
         for (let ix = 0; ix < lessons.length; ix++) {
             const lesson = lessons[ix];
@@ -118,7 +118,7 @@ async function createLessons(cube, lessons, repo_name, token, bHub) {
         
         shell.exec(`git add --all`, { silent: _silent });
         shell.exec(`git commit -m 'Add lessons'`, { silent: _silent });
-        shell.exec(`git push https://${bHub}:${token}@github.com/${bHub}/${repo_name}.git --all`, { silent: _silent });
+        shell.exec(`git push https://${bHub}:${token}@github.com/${bHub}/${repoName}.git --all`, { silent: _silent });
         
         console.log(`Done.`);
 
@@ -134,7 +134,7 @@ async function createLessons(cube, lessons, repo_name, token, bHub) {
     }
 }
 
-async function forkBhubCube(username, repo_name, bHub) {
+async function forkBhubCube(username, repoName, bHub) {
     console.log("Forking to teacher repo...");
     try {
         // get teacher token
@@ -148,12 +148,12 @@ async function forkBhubCube(username, repo_name, bHub) {
         });
         await octokit.repos.createFork({
             owner: bHub,
-            repo: repo_name
+            repo: repoName
         });
 
         return {
             result: true,
-            repoLink: `https://github.com/${username}/${repo_name}`
+            repoLink: `https://github.com/${username}/${repoName}`
         }
     } catch (err) {
         return {
@@ -163,7 +163,7 @@ async function forkBhubCube(username, repo_name, bHub) {
     }
 }
 
-async function enablePage(username, repo_name) {
+async function enablePage(username, repoName) {
     console.log("Enable git page...");
     try {
         // get teacher token
@@ -179,7 +179,7 @@ async function enablePage(username, repo_name) {
         // enable page
         await octokit.repos.enablePagesSite({
             owner: username,
-            repo: repo_name,
+            repo: repoName,
             source: {
                 "branch": "master",
                 "path": "/docs"
@@ -192,7 +192,7 @@ async function enablePage(username, repo_name) {
         console.log("Done.");
         return {
             result: true,
-            repoLink: `https://github.com/${username}/${repo_name}`
+            repoLink: `https://github.com/${username}/${repoName}`
         }
     } catch (err) {
         return {
@@ -201,6 +201,34 @@ async function enablePage(username, repo_name) {
         }
     }
 }
+
+// async function addCollaborator(owner, repo, collaborator, token) {
+//     console.log("Add collaborator...");
+//     try {
+//         let octokit = new Octokit({
+//             auth: "token " + token
+//         });
+//         // add collaborator
+//         let res = await octokit.repos.addCollaborator({
+//             owner,
+//             repo,
+//             username: collaborator
+//         })
+//         // accept invitation
+//         await axios.post(
+//             'https://webhooks.mongodb-stitch.com/api/client/v2.0/app/kportal-grmuv/service/kportalWeb/incoming_webhook/acceptGitInvitation?secret=secret', {
+//             "invitation_id": res.data.id,
+//             "username": collaborator
+//         });
+//         console.log("Done.");
+//         return true;
+//     } catch (err) {
+//         return {
+//             result: false,
+//             error: "Couldn't add collaborator: " + err.message
+//         }
+//     }
+// }
 
 async function deleteFile(owner, repo, path, message, branch, token) {
     try {
@@ -238,11 +266,8 @@ let initCube = async (username, cube, lessons, repo, gitToken) => {
     const bHub = 'kportal-hub';
     const _silent = false;
 
-    // const KIDOCODE = "KidoCode";
-    // const default_thub = 'default-thub';
-
     try {
-        const repo_name = `${username}-${cube}-build`;
+        const repoName = `${username}-${cube}-build`;
 
         // create encrypted auth file and send it to server to get tokens
         await encryptAndPutAuthFile(bHub, repo, algorithm, gitToken, authPhrase, _silent);
@@ -251,29 +276,28 @@ let initCube = async (username, cube, lessons, repo, gitToken) => {
         let authRes = (await axios.post(server + "/api/check-auth", {
             username,
             gitToken,
-            repo: repo_name,
+            repo: repoName,
             path: `auth`,
             type: "c"
-        })).data
-
+        })).data;
         if (!authRes.result) {
             throw new Error("Unauthorized Access")
             // return false;
         } else {
-
             let r = await getUserTokenAndDecrypt(repo, algorithm, gitToken);
+            // const teacherToken = r.split('\n')[0].split('=')[1]
             const masterToken = r.split('\n')[1].split('=')[1]
 
             // ============================================== func 1 - clone cube from thub 
-            let res = await cloneTrainerBuiltCube(bHub, repo_name);
+            let res = await cloneTrainerBuiltCube(bHub, repoName);
             if (res.result) {
                 // ========================================== func 2 - create a branch for each lesson
-                await createLessons(cube, lessons, repo_name, masterToken, bHub);
+                await createLessons(cube, lessons, repoName, masterToken, bHub);
                 
                 // ========================================== func 3 - delete auth file
                 await deleteFile(
                     bHub, // owner
-                    repo_name, // repo
+                    repoName, // repo
                     "auth", // path
                     "delete auth file",
                     "master", // branch
@@ -283,7 +307,7 @@ let initCube = async (username, cube, lessons, repo, gitToken) => {
                 // ========================================== func 4 - delete cube.user.json
                 await deleteFile(
                     bHub, // owner
-                    repo_name, // repo
+                    repoName, // repo
                     `${cube}.user.json`, // path
                     `Delete ${cube}.user.json`,
                     "master", // branch
@@ -291,10 +315,13 @@ let initCube = async (username, cube, lessons, repo, gitToken) => {
                 );
 
                 // ========================================== func 5 - fork cube repo for teacher
-                await forkBhubCube(username, repo_name, bHub);
+                await forkBhubCube(username, repoName, bHub);
 
-                // ========================================== func 6 - enable page
-                let resp = await enablePage(username, repo_name);
+                // ========================================== func 6 - add collaborator
+                // await addCollaborator(username, repoName, collaborator, teacherToken);
+
+                // ========================================== func 7 - enable page
+                let resp = await enablePage(username, repoName);
 
                 return resp;
             }
