@@ -153,10 +153,10 @@ let initCube = async (username, cube, repo, gitToken) => {
     const qHub = 'kportal-hub'; 
     const _silent = false;
     
+    const publishedQHubCube = `${username}-${cube}-build`; 
+    const qHubCube = `${cube}-qhub`; 
+    
     try {
-        const publishedQHubCube = `${username}-${cube}-build`; 
-        const qHubCube = `${cube}-qhub`; 
-
         // create encrypted auth file and send it to server to get tokens
         await encryptAndPutAuthFile(qHub, repo, algorithm, gitToken, authPhrase, _silent);
 
@@ -164,8 +164,8 @@ let initCube = async (username, cube, repo, gitToken) => {
         let authRes = (await axios.post(server + "/api/check-auth", {
             username,
             gitToken,
-            repo: cHubCube,
-            path: `auth-req`,
+            repo: publishedQHubCube,
+            path: `auth`,
             type: "c"
         })).data;
 
@@ -174,6 +174,14 @@ let initCube = async (username, cube, repo, gitToken) => {
                 qHub, // owner
                 publishedQHubCube, // repo
                 "auth", // path
+                "Delete auth request file",
+                "master", // branch
+                gitToken
+            );
+            await deleteFile(
+                qHub, // owner
+                publishedQHubCube, // repo
+                "auth-req", // path
                 "Delete auth request file",
                 "master", // branch
                 gitToken
@@ -236,6 +244,26 @@ let initCube = async (username, cube, repo, gitToken) => {
         
     }
     catch(err){
+        try {
+            await deleteFile(
+                qHub, // owner
+                publishedQHubCube, // repo
+                "auth", // path
+                "Delete auth request file",
+                "master", // branch
+                gitToken
+            );
+            await deleteFile(
+                qHub, // owner
+                publishedQHubCube, // repo
+                "auth-req", // path
+                "Delete auth request file",
+                "master", // branch
+                gitToken
+            );
+        } catch (e) {
+            console.log('[Catch] Could not delete auth files: ', e)
+        }
         console.log(`Couldn't create and fetch lesson branches for ${cube}`, err )
         return false;
     }
