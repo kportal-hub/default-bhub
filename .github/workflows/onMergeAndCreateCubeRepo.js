@@ -40,9 +40,6 @@ async function decrypt(content, algorithm, key) {
 
 async function encryptAndPutAuthFile(username, repo, algorithm, gitToken, authPhrase, _silent) {
     try {
-        // var cipher = crypto.createCipher(algorithm, gitToken);
-        // var encryptedPhrase = cipher.update(authPhrase, 'utf8', 'hex');
-        // encryptedPhrase += cipher.final('hex');
         let encryptedPhrase = await encrypt(authPhrase, algorithm, gitToken)
         shell.exec(`git checkout master`, {silent: _silent});
         shell.exec(`echo ${encryptedPhrase} > auth`, {silent: _silent});
@@ -77,7 +74,7 @@ async function fetchCubeInfo(owner, repo, path, token) {
         let cubeInfo = await octokit.repos.getContents({
             owner,
             repo,
-            path: path,
+            path,
             headers: {
                 'accept': 'application/vnd.github.VERSION.raw'
             }
@@ -126,22 +123,21 @@ async function deleteFile(owner, repo, path, message, branch, token) {
 async function addLessonBranches(qHub, repo, publishedRepo, lessenBranches, masterToken, silent) {
     console.log(`Create lesson branches...`);
     try {
-        const cloneUrl = `https://github.com/${qHub}/${repo}`;
+        shell.exec(`git checkout master`, { silent });
+        const cloneUrl = `https://github.com/${qHub}/${publishedRepo}`;
+        shell.exec(`mkdir ${process.cwd()}/cubeRepo`, { silent });
         shell.exec(`git clone ${cloneUrl} cubeRepo`, { silent });
-        process.chdir(process.cwd() + `/cubeRepo`);
-        
+        process.chdir(`${process.cwd()}/cubeRepo`);
         for (let ix = 0; ix < lessenBranches.length; ix++) {
             const lessonBranch = lessenBranches[ix];
             console.log(`Create new branch ${lessonBranch}...`);
-            shell.exec(`git checkout --orphan ${newLesson}`, { silent: _silent });
-            shell.exec(`git rm -rf .`, { silent: _silent });
-            shell.exec(`git pull https://${qHub}:${masterToken}@github.com/${publishedRepo}.git ${lessonBranch}`, { silent });
-            shell.exec(`git push https://${qHub}:${masterToken}@github.com/${repo}.git ${lessonBranch}`, { silent });
+            shell.exec(`git checkout --orphan ${lessonBranch}`, { silent });
+            shell.exec(`git rm -rf .`, { silent });
+            shell.exec(`git pull https://${qHub}:${masterToken}@github.com/${qHub}/${publishedRepo}.git ${lessonBranch}`, { silent });
+            shell.exec(`git push https://${qHub}:${masterToken}@github.com/${qHub}/${repo}.git ${lessonBranch}`, { silent });
         }
-
         console.log(`Done.`);
         return true;
-
     } catch(err){
         throw err
     }
@@ -168,7 +164,7 @@ let initCube = async (username, cube, repo, gitToken) => {
             path: `auth`,
             type: "c"
         })).data;
-
+        
         if (!authRes.result) {
             await deleteFile(
                 qHub, // owner
@@ -202,19 +198,9 @@ let initCube = async (username, cube, repo, gitToken) => {
             );
 
             if (res.result) {
-                let lessonBranches = Object.keys(res.result);
+                let lessonBranches = Object.keys(res.cubeInfo.result);
 
-                // ========================================== func 2 - delete auth file
-                await deleteFile(
-                    qHub, // owner
-                    publishedQHubCube, // repo
-                    "auth-req", // path
-                    "Delete auth request file",
-                    "master", // branch
-                    masterToken
-                );
-
-                // ========================================== func 3 - creat lesson branches
+                // ========================================== func 2 - creat lesson branches
                 await addLessonBranches(
                     qHub, 
                     qHubCube,
@@ -224,12 +210,21 @@ let initCube = async (username, cube, repo, gitToken) => {
                     _silent
                 );
 
+                // ========================================== func 3 - delete auth file
+                await deleteFile(
+                    qHub, // owner
+                    publishedQHubCube, // repo
+                    "auth", // path
+                    "Delete auth request file",
+                    "master", // branch
+                    masterToken
+                );
                 // ========================================== func 4 - delete auth-req file
                 await deleteFile(
                     qHub, // owner
                     publishedQHubCube, // repo
                     "auth-req", // path
-                    "Delete auth request file",
+                    "Delete auth-req request file",
                     "master", // branch
                     masterToken
                 );
@@ -239,7 +234,7 @@ let initCube = async (username, cube, repo, gitToken) => {
             }
 
             console.log("No lesson branches found to create and add ")
-            return false
+            return false;
         }
         
     }
@@ -257,12 +252,12 @@ let initCube = async (username, cube, repo, gitToken) => {
                 qHub, // owner
                 publishedQHubCube, // repo
                 "auth-req", // path
-                "Delete auth request file",
+                "Delete auth-req request file",
                 "master", // branch
                 gitToken
             );
         } catch (e) {
-            console.log('[Catch] Could not delete auth files: ', e)
+            console.log('[Catch] Could not delete auth files: ')
         }
         console.log(`Couldn't create and fetch lesson branches for ${cube}`, err )
         return false;
