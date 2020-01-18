@@ -309,7 +309,7 @@ let initCube = async (username, cube, lessons, repo, gitToken) => {
                     bHub, // owner
                     repoName, // repo
                     `${cube}.user.json`, // path
-                    `Delete ${cube}.user.json`,
+                    `delete ${cube}.user.json`,
                     "master", // branch
                     masterToken
                 );
@@ -335,11 +335,15 @@ let initCube = async (username, cube, lessons, repo, gitToken) => {
 }
 
 const cubeOnPush = async (repo, gitToken) => {
-    const cube = JSON.parse(fs.readFileSync(process.env.NODE_CUBE, 'utf8')).commits[0].message.split(".")[0];
-    const username = JSON.parse(fs.readFileSync(`${cube}.user.json`, 'utf8')).username
-    const lessons = JSON.parse(fs.readFileSync(`${cube}.user.json`, 'utf8')).lessons;
-    
-    return await initCube(username, cube, lessons, repo, gitToken)
+    const commit = JSON.parse(fs.readFileSync(process.env.NODE_CUBE, 'utf8')).commits[0].message;
+    // const cube = JSON.parse(fs.readFileSync(process.env.NODE_CUBE, 'utf8')).commits[0].message.split(".")[0];
+    const cube = commit.split(".")[0];
+    if (!commit.toLocaleLowerCase().startsWith('delete')) {
+        const username = JSON.parse(fs.readFileSync(`${cube}.user.json`, 'utf8')).username;
+        const lessons = JSON.parse(fs.readFileSync(`${cube}.user.json`, 'utf8')).lessons;
+        return await initCube(username, cube, lessons, repo, gitToken);
+    }
+    return "no actions to trigger";
 }
 
 cubeOnPush(process.argv[2], process.argv[3]).then((res) => {
